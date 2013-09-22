@@ -1,0 +1,361 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use Getopt::Long;
+use Pod::Usage;
+use Data::Dumper;
+
+#command line options
+my ( $help, $period, $author, $filepath );
+
+GetOptions(
+    'help|?'     => \$help,
+    'period|p=n' => \$period,
+    'author=s'     => \$author,
+) or pod2usage(2);
+pod2usage(1) if $help;
+
+$filepath = shift @ARGV;
+
+# also tried to use unicode chars instead of colors, the exp did not go well
+#qw(⬚ ⬜ ▤ ▣ ⬛)
+#qw(⬚ ▢ ▤ ▣ ⬛)
+
+my @colors = ( 237, 157, 155, 47, 2 );
+my @months = qw (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+
+process();
+
+# 53 X 7 grid
+# consists of 0 - 370 blocks
+my ( @grid, @timeline, %pos_month, %month_pos, $jan1, $cur_year, $max_epoch, $min_epoch, $max_commits, $q1, $q2, $q3 );
+my ( $first_block, $last_block, $start_block, $end_block, $row_start, $row_end );
+my ( $total_commits, $max_streak, $cur_streak, $max_streak_weekdays, $cur_streak_weekdays );
+my ( $cur_start, $max_start, $max_end, $cur_weekdays_start, $max_weekdays_start, $max_weekdays_end );
+#loads of global variables
+
+sub process {
+    init_cal_stuff();
+    my $extra_args = "";
+    $extra_args = " --author=" . $author if $author;
+    if ($filepath) {
+        if ( -e $filepath ) {
+            $extra_args .= " -- " . $filepath;
+        }
+        else {
+            print "fatal: $filepath do not exists\n";
+            exit(2);
+        }
+    }
+    my $git_command = "git log --pretty=format:\"%at\" --since=\"13 months\"" . $extra_args;    #commits might not be in strict time order, check some past too
+    my $epochs = qx/$git_command/;
+    if ($?) {
+        print "fatal: git-cal failed to get the git log\n";
+        exit(2);
+    }
+    my @epochs = split /\n/, $epochs;
+    if (! @epochs) {
+        print "git-cal: got empty log, nothing to do\n";
+        exit(1);
+    }
+    my $status;
+    foreach (@epochs) {
+        $status = add_epoch($_);
+        last if !$status;
+    }
+    compute_stats();
+    print_grid();
+}
+
+
+sub init_cal_stuff {
+    my ( $wday, $yday, $month, $year ) = ( localtime(time) )[ 6, 7, 4, 5 ];
+    $cur_year    = $year;
+    $jan1        = 370 - ( $yday + 6 - $wday );
+    $last_block  = $jan1 + $yday + 1;
+    $first_block = $last_block - 365;
+    $max_commits = 0;
+    push @timeline, $jan1;
+    $month_pos{0} = $jan1;
+    my $cur = $jan1;
+
+    foreach ( 0 .. $month - 1 ) {
+        $cur += number_of_days( $_, $year );
+        push @timeline, $cur;
+        $month_pos{ $_ + 1 } = $cur;
+    }
+    $cur = $jan1;
+    for ( my $m = 11; $m > $month; $m-- ) {
+        $cur -= number_of_days( $m, $year - 1 );
+        unshift @timeline, $cur;
+        $month_pos{$m} = $cur;
+    }
+
+    $pos_month{ $month_pos{$_} } = $months[$_] foreach keys %month_pos;
+
+    die "period can only be between -11 to -1 and 1 to 12" if ( defined $period && ( $period < -11 || $period > 12 || $period == 0 ) );
+    $period = 0 if !defined $period;
+    if ( $period == 0 ) {
+        $start_block = $first_block;
+        $end_block   = $last_block;
+    }
+    elsif ( $period > 0 ) {
+        $start_block = $month_pos{ $period - 1 };
+        $end_block   = $month_pos{ $period % 12 };
+        $end_block   = $last_block if $start_block > $end_block;
+    }
+    else {
+        $start_block = $timeline[ 11 + $period ];
+        $start_block = $first_block if $period == -12;
+        $end_block   = $last_block;
+    }
+    $row_start = int $start_block / 7;
+    $row_end   = int $end_block / 7;
+    $max_epoch = time - 86400 * ( $last_block - $end_block );
+    $min_epoch = time - 86400 * ( $last_block - $start_block );
+
+    ( $total_commits, $max_streak, $cur_streak, $max_streak_weekdays, $cur_streak_weekdays ) = (0) x 5;
+    ( $cur_start, $max_start, $max_end, $cur_weekdays_start, $max_weekdays_start, $max_weekdays_end ) = (0) x 6;
+
+}
+
+
+sub add_epoch {
+    my $epoch = shift;
+    if ( $epoch > $max_epoch || $epoch < $min_epoch ) {
+        return 1;
+    }
+    my ( $month, $year, $wday, $yday ) = ( localtime($epoch) )[ 4, 5, 6, 7 ];
+    my $pos;
+    if ( $year == $cur_year ) {
+        $pos = ( $jan1 + $yday );
+    }
+    else {
+        my $total = ( $year % 4 ) ? 365 : 366;
+        $pos = ( $jan1 - ( $total - $yday ) );
+    }
+    return 0 if $pos < 0;    #just in case
+    add_to_grid( $pos, $epoch );
+    return 1;
+}
+
+sub add_to_grid {
+    my ( $pos, $epoch ) = @_;
+    my $r = int $pos / 7;
+    my $c = $pos % 7;
+    $grid[$r][$c]->{commits}++;
+    $grid[$r][$c]->{epoch} = $epoch;
+    $max_commits = $grid[$r][$c]->{commits} if $grid[$r][$c]->{commits} > $max_commits;
+}
+
+
+sub compute_stats {
+    my %commit_counts;
+    foreach my $r ( $row_start .. $row_end ) {
+        foreach my $c ( 0 .. 6 ) {
+            my $cur_block = ( $r * 7 ) + $c;
+            if ( $cur_block >= $start_block && $cur_block < $end_block ) {
+                my $count = $grid[$r][$c]->{commits} || 0;
+                $total_commits += $count;
+                if ($count) {
+                    $commit_counts{$count} = 1;
+                    $cur_streak++;
+                    $cur_start = $grid[$r][$c]->{epoch} if $cur_start == 0;
+                    if ( $cur_streak > $max_streak ) {
+                        $max_streak = $cur_streak;
+                        $max_start  = $cur_start;
+                        $max_end    = $grid[$r][$c]->{epoch};
+                    }
+
+                    #count++ if you work on weekends and streak will not be broken otherwise :)
+                    $cur_streak_weekdays++;
+                    $cur_weekdays_start = $grid[$r][$c]->{epoch} if $cur_weekdays_start == 0;
+                    if ( $cur_streak_weekdays > $max_streak_weekdays ) {
+                        $max_streak_weekdays = $cur_streak_weekdays;
+                        $max_weekdays_start  = $cur_weekdays_start;
+                        $max_weekdays_end    = $grid[$r][$c]->{epoch};
+                    }
+                }
+                else {
+                    $cur_streak = 0;
+                    $cur_start  = 0;
+                    if ( $c > 0 && $c < 6 ) {
+                        $cur_streak_weekdays = 0;
+                        $cur_weekdays_start  = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    #now compute quartiles
+    my @commit_counts = sort { $a <=> $b } ( keys %commit_counts );
+    $q1 = $commit_counts[ int( scalar @commit_counts ) / 4 ];
+    $q2 = $commit_counts[ int( scalar @commit_counts ) / 2 ];
+    $q3 = $commit_counts[ int( 3 * ( scalar @commit_counts ) / 4 ) ];
+
+    #print "commit counts: " . (scalar @commit_counts) . " - " . (join ",",@commit_counts) . "\n\n";
+    #print "quartiles: $q1 $q2 $q3\n";
+}
+
+sub print_grid {
+    my $space = 6;
+    print_month_names($space);
+    foreach my $c ( 0 .. 6 ) {
+        printf "\n%" . ( $space - 2 ) . "s", "";
+        if ( $c == 1 ) {
+            print "M ";
+        }
+        elsif ( $c == 3 ) {
+            print "W ";
+        }
+        elsif ( $c == 5 ) {
+            print "F ";
+        }
+        else {
+            print "  ";
+        }
+        foreach my $r ( $row_start .. $row_end ) {
+            my $cur_block = ( $r * 7 ) + $c;
+            if ( $cur_block >= $start_block && $cur_block < $end_block ) {
+                my $val = $grid[$r][$c]->{commits} || 0;
+                my $index = 0;
+
+                #$index = ( int( ( $val - 4 ) / $divide ) ) + 1 if $val > 0; #too dumb and bad
+                if ($val) {
+                    if ( $val <= $q1 ) {
+                        $index = 1;
+                    }
+                    elsif ( $val <= $q2 ) {
+                        $index = 2;
+                    }
+                    elsif ( $val <= $q3 ) {
+                        $index = 3;
+                    }
+                    else {
+                        $index = 4;
+                    }
+                }
+                print_block($index);
+            }
+            else {
+                print "  ";
+            }
+        }
+    }
+    print "\n\n";
+    printf "%" . ( 2 * ( $row_end - $row_start ) + $space - 10 ) . "s", "Less ";    #such that the right borders align
+    print_block($_) foreach ( 0 .. 4 );
+    print " More\n";
+
+    printf "%4d: Total commits\n", $total_commits;
+    print_message( $max_streak_weekdays, $max_weekdays_start, $max_weekdays_end, "Longest streak excluding weekends" );
+    print_message( $max_streak,          $max_start,          $max_end,          "Longest streak including weekends" );
+    print_message( $cur_streak_weekdays, $cur_weekdays_start, time,              "Current streak" );
+}
+
+
+sub print_block {
+    my $index = shift;
+    $index = 4 if $index > 4;
+    my $c     = $colors[$index];
+    #always show on a black background, else it looks different (sometimes really bad ) with different settings.
+    print "\e[40;38;5;${c}m⬛ \e[0m";
+}
+
+sub print_month_names {
+    #print month labels, printing current month in the right position is tricky
+    my $space = shift;
+    if ( defined $period && $period > 0 ) {
+        printf "%" . $space . "s    %3s", "", $months[ $period - 1 ];
+        return;
+    }
+    my $label_printer = 0;
+    my $timeline_iter = 11 + ( $period || -11 );
+    if ( $start_block == $first_block && $timeline[0] != 0 ) {
+        my $first_pos = int $timeline[0] / 7;
+        if ( $first_pos == 0 ) {
+            printf "%" . ( $space - 2 ) . "s", "";
+            print $pos_month{ $timeline[-1] } . " ";
+            print $pos_month{ $timeline[0] } . " ";
+            $timeline_iter++;
+        }
+        elsif ( $first_pos == 1 ) {
+            printf "%" . ( $space - 2 ) . "s", "";
+            print $pos_month{ $timeline[-1] } . " ";
+        }
+        else {
+            printf "%" . $space . "s", "";
+            printf "%-" . ( 2 * $first_pos ) . "s", $pos_month{ $timeline[-1] };
+        }
+        $label_printer = $first_pos;
+    }
+    else {
+        printf "%" . $space . "s", "";
+        $label_printer += ( int $start_block / 7 );
+    }
+
+    while ( $label_printer < $end_block / 7 && $timeline_iter <= $#timeline ) {
+        while ( ( int $timeline[$timeline_iter] / 7 ) != $label_printer ) { print "  "; $label_printer++; }
+        print "  " . $pos_month{ $timeline[$timeline_iter] } . " ";
+        $label_printer += 3;
+        $timeline_iter++;
+    }
+}
+
+sub print_message {
+    my ( $days, $start_epoch, $end_epoch, $message ) = @_;
+    if ($days) {
+        my @range;
+        foreach my $epoch ( $start_epoch, $end_epoch ) {
+            my ( $mday, $mon, $year ) = ( localtime($epoch) )[ 3, 4, 5 ];
+            my $s = sprintf( "%3s %2d %4d", $months[$mon], $mday, ( 1900 + $year ) );
+            push @range, $s;
+        }
+        printf "%4d: Days ( %-25s ) - %-40s\n", $days, ( join " - ", @range ), $message;
+    }
+    else {
+        printf "%4d: Days - %-40s\n", $days, $message;
+    }
+}
+
+sub number_of_days {
+    my ( $month, $year ) = @_;
+    return 30 if $month == 3 || $month == 5 || $month == 8 || $month == 10;
+    return 31 if $month != 1;
+    return 28 if $year % 4;
+    return 29;
+}
+
+__END__
+
+=head1 NAME
+
+git-cal - A simple tool to view commits calendar (similar to github contributions calendar) on command line
+
+=head1 SYNOPSIS
+
+"git-cal" is a tool to visualize the git commit history in github's contribution calander style.
+The calendar shows how frequently the commits are made over the past year or some choosen period
+
+  git-cal
+  git-cal --author=<author> -- <filepath>
+
+=head2 OPTIONS
+
+  --author              view commits of a particular author (passed to git log --author= )
+  --period|p            Do not show the entire year, p=1 to 12 shows only one month (1 = Jan .. 12 = Dec), p=-1 to -11 shows last p months and the current month
+  --help|?              help me
+
+=head2 ADDITIONAL OPTIONS
+
+  -- filename to view the logs of a particular file or directory
+
+=head1 AUTHOR
+
+Karthik katooru <karthikkatooru@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This program is free software; you can redistribute it and/or modify it under the MIT License
