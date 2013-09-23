@@ -57,7 +57,7 @@ sub process {
             exit(2);
         }
     }
-    my $git_command = "git log --pretty=format:\"%at\" --since=\"13 months\"" . $extra_args;    #commits might not be in strict time order, check some past too
+    my $git_command = "git log --no-merges --pretty=format:\"%at\" --since=\"13 months\"" . $extra_args;    #commits might not be in strict time order, check some past too
     my $epochs = qx/$git_command/;
     if ($?) {
         print "fatal: git-cal failed to get the git log\n";
