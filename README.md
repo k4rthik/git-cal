@@ -14,8 +14,8 @@ on your terminal
 ### Install
 
 Just drop the script anywhere in $PATH
-- with root access: sudo wget https://raw.github.com/k4rthik/git-cal/master/git-cal -o /usr/local/bin/git-cal
-- curl https://raw.github.com/k4rthik/git-cal/master/git-cal > ~/bin/git-cal && chmod 0755 !#:3 
+- with root access: `sudo wget https://raw.github.com/k4rthik/git-cal/master/git-cal -o /usr/local/bin/git-cal`
+- `curl https://raw.github.com/k4rthik/git-cal/master/git-cal > ~/bin/git-cal && chmod 0755 !#:3` 
 
 ###TODO
 - Support more statistics like commits per month/week etc
