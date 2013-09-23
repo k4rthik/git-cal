@@ -7,7 +7,7 @@ use Pod::Usage;
 use Data::Dumper;
 
 binmode(STDOUT, ":utf8");
-#command line options
+# Command line options
 my ( $help, $period, $author, $filepath );
 
 GetOptions(
@@ -19,7 +19,7 @@ pod2usage(1) if $help;
 
 $filepath = shift @ARGV;
 
-# also tried to use unicode chars instead of colors, the exp did not go well
+# Also tried to use unicode chars instead of colors, the exp did not go well
 #qw(⬚ ⬜ ▤ ▣ ⬛)
 #qw(⬚ ▢ ▤ ▣ ⬛)
 
@@ -29,20 +29,33 @@ my @months = qw (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 process();
 
 # 53 X 7 grid
-# consists of 0 - 370 blocks
-my ( @grid, @timeline, %pos_month, %month_pos, $jan1, $cur_year, $max_epoch, $min_epoch, $max_commits, $q1, $q2, $q3 );
-my ( $first_block, $last_block, $start_block, $end_block, $row_start, $row_end );
-my ( $total_commits, $max_streak, $cur_streak, $max_streak_weekdays, $cur_streak_weekdays );
-my ( $cur_start, $max_start, $max_end, $cur_weekdays_start, $max_weekdays_start, $max_weekdays_end );
-#loads of global variables
+# Consists of 0 - 370 blocks
+my (
+    @grid, @timeline, %pos_month, %month_pos, $jan1, $cur_year, $max_epoch,
+    $min_epoch, $max_commits, $q1, $q2, $q3,
+);
+my (
+    $first_block, $last_block, $start_block, $end_block, $row_start, $row_end,
+);
+my (
+    $total_commits, $max_streak, $cur_streak, $max_streak_weekdays,
+    $cur_streak_weekdays,
+);
+my (
+    $cur_start, $max_start, $max_end, $cur_weekdays_start, $max_weekdays_start,
+    $max_weekdays_end,
+);
+# Loads of global variables
 
 sub process {
-    #try to exit gracefully when the terminal doesn't support enough colors
-    no warnings; #dont warn if tput command fails
+    # Try to exit gracefully when the terminal doesn't support enough colors
+    no warnings; # Dont warn if tput command fails
     my $colors_supported = qx/tput colors/;
     if ($colors_supported && $colors_supported < 256) {
       chomp $colors_supported;
-      print "fatal: 'tput colors' returned < 256 (" . $colors_supported . ") , cannot plot the calendar as the terminal doesn't support enough colors\n"; #will try to hack around this soon
+      # Will try to hack around this soon
+      print "fatal: 'tput colors' returned < 256 (" . $colors_supported .
+            ") , cannot plot the calendar as the terminal doesn't support enough colors\n";
       exit(1);
     }
     init_cal_stuff();
@@ -57,7 +70,8 @@ sub process {
             exit(2);
         }
     }
-    my $git_command = "git log --pretty=format:\"%at\" --since=\"13 months\"" . $extra_args;    #commits might not be in strict time order, check some past too
+    # Commits might not be in strict time order, check some past too
+    my $git_command = "git log --pretty=format:\"%at\" --since=\"13 months\"" . $extra_args;
     my $epochs = qx/$git_command/;
     if ($?) {
         print "fatal: git-cal failed to get the git log\n";
@@ -103,7 +117,9 @@ sub init_cal_stuff {
 
     $pos_month{ $month_pos{$_} } = $months[$_] foreach keys %month_pos;
 
-    die "period can only be between -11 to -1 and 1 to 12" if ( defined $period && ( $period < -11 || $period > 12 || $period == 0 ) );
+    if ( defined $period && ( $period < -11 || $period > 12 || $period == 0 ) ) {
+        die "period can only be between -11 to -1 and 1 to 12";
+    }
     $period = 0 if !defined $period;
     if ( $period == 0 ) {
         $start_block = $first_block;
@@ -124,8 +140,10 @@ sub init_cal_stuff {
     $max_epoch = time - 86400 * ( $last_block - $end_block );
     $min_epoch = time - 86400 * ( $last_block - $start_block );
 
-    ( $total_commits, $max_streak, $cur_streak, $max_streak_weekdays, $cur_streak_weekdays ) = (0) x 5;
-    ( $cur_start, $max_start, $max_end, $cur_weekdays_start, $max_weekdays_start, $max_weekdays_end ) = (0) x 6;
+    ( $total_commits, $max_streak, $cur_streak, $max_streak_weekdays,
+        $cur_streak_weekdays ) = (0) x 5;
+    ( $cur_start, $max_start, $max_end, $cur_weekdays_start,
+        $max_weekdays_start, $max_weekdays_end ) = (0) x 6;
 
 }
 
@@ -155,7 +173,9 @@ sub add_to_grid {
     my $c = $pos % 7;
     $grid[$r][$c]->{commits}++;
     $grid[$r][$c]->{epoch} = $epoch;
-    $max_commits = $grid[$r][$c]->{commits} if $grid[$r][$c]->{commits} > $max_commits;
+    if ( $grid[$r][$c]->{commits} > $max_commits ) {
+        $max_commits = $grid[$r][$c]->{commits};
+    }
 }
 
 
@@ -177,9 +197,12 @@ sub compute_stats {
                         $max_end    = $grid[$r][$c]->{epoch};
                     }
 
-                    #count++ if you work on weekends and streak will not be broken otherwise :)
+                    # count++ if you work on weekends and streak will
+                    # not be broken otherwise :)
                     $cur_streak_weekdays++;
-                    $cur_weekdays_start = $grid[$r][$c]->{epoch} if $cur_weekdays_start == 0;
+                    if ( $cur_weekdays_start == 0 ) {
+                        $cur_weekdays_start = $grid[$r][$c]->{epoch}
+                    }
                     if ( $cur_streak_weekdays > $max_streak_weekdays ) {
                         $max_streak_weekdays = $cur_streak_weekdays;
                         $max_weekdays_start  = $cur_weekdays_start;
@@ -204,7 +227,8 @@ sub compute_stats {
     $q2 = $commit_counts[ int( scalar @commit_counts ) / 2 ];
     $q3 = $commit_counts[ int( 3 * ( scalar @commit_counts ) / 4 ) ];
 
-    #print "commit counts: " . (scalar @commit_counts) . " - " . (join ",",@commit_counts) . "\n\n";
+    #print "commit counts: " . (scalar @commit_counts) . " - " .
+    # (join ",",@commit_counts) . "\n\n";
     #print "quartiles: $q1 $q2 $q3\n";
 }
 
@@ -231,7 +255,6 @@ sub print_grid {
                 my $val = $grid[$r][$c]->{commits} || 0;
                 my $index = 0;
 
-                #$index = ( int( ( $val - 4 ) / $divide ) ) + 1 if $val > 0; #too dumb and bad
                 if ($val) {
                     if ( $val <= $q1 ) {
                         $index = 1;
@@ -254,14 +277,18 @@ sub print_grid {
         }
     }
     print "\n\n";
-    printf "%" . ( 2 * ( $row_end - $row_start ) + $space - 10 ) . "s", "Less ";    #such that the right borders align
+    # Such that the right borders align
+    printf "%" . ( 2 * ( $row_end - $row_start ) + $space - 10 ) . "s", "Less ";
     print_block($_) foreach ( 0 .. 4 );
     print " More\n";
 
     printf "%4d: Total commits\n", $total_commits;
-    print_message( $max_streak_weekdays, $max_weekdays_start, $max_weekdays_end, "Longest streak excluding weekends" );
-    print_message( $max_streak,          $max_start,          $max_end,          "Longest streak including weekends" );
-    print_message( $cur_streak_weekdays, $cur_weekdays_start, time,              "Current streak" );
+    print_message( $max_streak_weekdays, $max_weekdays_start,
+        $max_weekdays_end, "Longest streak excluding weekends" );
+    print_message( $max_streak,          $max_start,
+        $max_end,          "Longest streak including weekends" );
+    print_message( $cur_streak_weekdays, $cur_weekdays_start,
+        time,              "Current streak" );
 }
 
 
@@ -269,13 +296,14 @@ sub print_block {
     my $index = shift;
     $index = 4 if $index > 4;
     my $c     = $colors[$index];
-    #always show on a black background, else it looks different (sometimes really bad ) with different settings.
-    #print "\e[40;38;5;${c}m⬛ \e[0m";
+    # Always show on a black background, else it looks different
+    # (sometimes really bad ) with different settings.
+    # print "\e[40;38;5;${c}m⬛ \e[0m";
     print "\e[40;38;5;${c}m\x{25fc} \e[0m";
 }
 
 sub print_month_names {
-    #print month labels, printing current month in the right position is tricky
+    # print month labels, printing current month in the right position is tricky
     my $space = shift;
     if ( defined $period && $period > 0 ) {
         printf "%" . $space . "s    %3s", "", $months[ $period - 1 ];
@@ -307,7 +335,9 @@ sub print_month_names {
     }
 
     while ( $label_printer < $end_block / 7 && $timeline_iter <= $#timeline ) {
-        while ( ( int $timeline[$timeline_iter] / 7 ) != $label_printer ) { print "  "; $label_printer++; }
+        while ( ( int $timeline[$timeline_iter] / 7 ) != $label_printer ) {
+            print "  "; $label_printer++;
+        }
         print "  " . $pos_month{ $timeline[$timeline_iter] } . " ";
         $label_printer += 3;
         $timeline_iter++;
@@ -320,10 +350,12 @@ sub print_message {
         my @range;
         foreach my $epoch ( $start_epoch, $end_epoch ) {
             my ( $mday, $mon, $year ) = ( localtime($epoch) )[ 3, 4, 5 ];
-            my $s = sprintf( "%3s %2d %4d", $months[$mon], $mday, ( 1900 + $year ) );
+            my $s = sprintf( "%3s %2d %4d",
+                $months[$mon], $mday, ( 1900 + $year ) );
             push @range, $s;
         }
-        printf "%4d: Days ( %-25s ) - %-40s\n", $days, ( join " - ", @range ), $message;
+        printf "%4d: Days ( %-25s ) - %-40s\n",
+            $days, ( join " - ", @range ), $message;
     }
     else {
         printf "%4d: Days - %-40s\n", $days, $message;
@@ -342,20 +374,26 @@ __END__
 
 =head1 NAME
 
-git-cal - A simple tool to view commits calendar (similar to github contributions calendar) on command line
+git-cal - A simple tool to view commits calendar
+(similar to github contributions calendar) on command line
 
 =head1 SYNOPSIS
 
-"git-cal" is a tool to visualize the git commit history in github's contribution calendar style.
-The calendar shows how frequently the commits are made over the past year or some choosen period
+"git-cal" is a tool to visualize the git commit history in github's
+contribution calendar style.
+The calendar shows how frequently the commits are made over the past
+year or some choosen period
 
   git-cal
   git-cal --author=<author> -- <filepath>
 
 =head2 OPTIONS
 
-  --author              view commits of a particular author (passed to git log --author= )
-  --period|p            Do not show the entire year, p=1 to 12 shows only one month (1 = Jan .. 12 = Dec), p=-1 to -11 shows last p months and the current month
+  --author              view commits of a particular author
+                        (passed to git log --author= )
+  --period|p            Do not show the entire year, p=1 to 12 shows only
+                        one month (1 = Jan .. 12 = Dec), p=-1 to -11 shows
+                        last p months and the current month
   --help|?              help me
 
 =head2 ADDITIONAL OPTIONS
@@ -368,4 +406,5 @@ Karthik katooru <karthikkatooru@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This program is free software; you can redistribute it and/or modify it under the MIT License
+This program is free software; you can redistribute it and/or modify
+it under the MIT License
