@@ -22,7 +22,7 @@ sudo wget https://raw.github.com/k4rthik/git-cal/master/git-cal \
 
 - without root access:
 ```
-curl https://raw.github.com/k4rthik/git-cal/master/git-cal > ~/bin/git-cal && chmod 0755 !#:3
+curl https://raw.github.com/k4rthik/git-cal/master/git-cal > ~/.local/bin/git-cal && chmod 0755 !#:3
 ```
 
 ###TODO
