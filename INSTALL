@@ -1,0 +1,14 @@
+Installation
+============
+
+With root access:
+
+  perl Makefile.pl
+  make
+  sudo make install
+
+Without root access:
+
+  perl Makefile.pl PREFIX=~/.local
+  make
+  make install
