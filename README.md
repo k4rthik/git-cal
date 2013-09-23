@@ -16,16 +16,19 @@ on your terminal
 Just drop the script anywhere in $PATH
 - with root access:
 ```
-sudo wget https://raw.github.com/k4rthik/git-cal/master/git-cal \
--O /usr/local/bin/git-cal && sudo chmod +x /usr/local/bin/git-cal
+perl Makefile.PL
+make
+sudo make install
 ```
 
 - without root access:
 ```
-curl https://raw.github.com/k4rthik/git-cal/master/git-cal > ~/.local/bin/git-cal && chmod 0755 !#:3
+perl Makefile.PL PREFIX=~/.local
+make
+make install
 ```
 
-###TODO
+### TODO
 - Support more statistics like commits per month/week etc
 - May be add a conf file to customize colors
 - Make the code pretty, modularized and easily installable
