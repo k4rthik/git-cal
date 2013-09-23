@@ -1,6 +1,5 @@
 #!/usr/bin/perl
 use strict;
-use warnings;
 
 use utf8;
 use Getopt::Long;
@@ -38,6 +37,14 @@ my ( $cur_start, $max_start, $max_end, $cur_weekdays_start, $max_weekdays_start,
 #loads of global variables
 
 sub process {
+    #try to exit gracefully when the terminal doesn't support enough colors
+    no warnings; #dont warn if tput command fails
+    my $colors_supported = qx/tput colors/;
+    if ($colors_supported && $colors_supported < 256) {
+      chomp $colors_supported;
+      print "fatal: 'tput colors' returned < 256 (" . $colors_supported . ") , cannot plot the calendar as the terminal doesn't support enough colors\n"; #will try to hack around this soon
+      exit(1);
+    }
     init_cal_stuff();
     my $extra_args = "";
     $extra_args = " --author=" . $author if $author;
