@@ -8,11 +8,12 @@ use Data::Dumper;
 
 binmode(STDOUT, ":utf8");
 #command line options
-my ( $help, $period, $author, $filepath );
+my ( $help, $period, $use_ascii, $author, $filepath );
 
 GetOptions(
     'help|?'     => \$help,
     'period|p=n' => \$period,
+    'ascii'      => \$use_ascii,
     'author=s'     => \$author,
 ) or pod2usage(2);
 pod2usage(1) if $help;
@@ -24,6 +25,7 @@ $filepath = shift @ARGV;
 #qw(⬚ ▢ ▤ ▣ ⬛)
 
 my @colors = ( 237, 157, 155, 47, 2 );
+my @ascii = ( " ", ".", "o", "O", "0" );
 my @months = qw (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 
 process();
@@ -260,10 +262,14 @@ sub print_grid {
 sub print_block {
     my $index = shift;
     $index = 4 if $index > 4;
-    my $c     = $colors[$index];
-    #always show on a black background, else it looks different (sometimes really bad ) with different settings.
-    #print "\e[40;38;5;${c}m⬛ \e[0m";
-    print "\e[40;38;5;${c}m\x{25fc} \e[0m";
+    if ($use_ascii) {
+        print "${ascii[$index]} ";
+    } else {
+        my $c     = $colors[$index];
+        #always show on a black background, else it looks different (sometimes really bad ) with different settings.
+        #print "\e[40;38;5;${c}m⬛ \e[0m";
+        print "\e[40;38;5;${c}m\x{25fc} \e[0m";
+    }
 }
 
 sub print_month_names {
@@ -346,6 +352,8 @@ The calendar shows how frequently the commits are made over the past year or som
 
 =head2 OPTIONS
 
+  --ascii               Display activity using ASCII characters instead of
+                        ANSI colors
   --author              view commits of a particular author (passed to git log --author= )
   --period|p            Do not show the entire year, p=1 to 12 shows only one month (1 = Jan .. 12 = Dec), p=-1 to -11 shows last p months and the current month
   --help|?              help me
