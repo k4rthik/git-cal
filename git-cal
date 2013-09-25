@@ -207,39 +207,23 @@ sub print_grid {
     print_month_names($space);
     foreach my $c ( 0 .. 6 ) {
         printf "\n%" . ( $space - 2 ) . "s", "";
-        if ( $c == 1 ) {
-            print "M ";
-        }
-        elsif ( $c == 3 ) {
-            print "W ";
-        }
-        elsif ( $c == 5 ) {
-            print "F ";
-        }
-        else {
-            print "  ";
-        }
+
+        print $c == 1 ? "M "
+            : $c == 3 ? "W "
+            : $c == 5 ? "F "
+                      : "  ";
+
         foreach my $r ( $row_start .. $row_end ) {
             my $cur_block = ( $r * 7 ) + $c;
             if ( $cur_block >= $start_block && $cur_block < $end_block ) {
                 my $val = $grid[$r][$c]->{commits} || 0;
-                my $index = 0;
 
-                #$index = ( int( ( $val - 4 ) / $divide ) ) + 1 if $val > 0; #too dumb and bad
-                if ($val) {
-                    if ( $val <= $q1 ) {
-                        $index = 1;
-                    }
-                    elsif ( $val <= $q2 ) {
-                        $index = 2;
-                    }
-                    elsif ( $val <= $q3 ) {
-                        $index = 3;
-                    }
-                    else {
-                        $index = 4;
-                    }
-                }
+                my $index = $val == 0   ? 0
+                          : $val <= $q1 ? 1
+                          : $val <= $q2 ? 2
+                          : $val <= $q3 ? 3
+                                        : 4;
+
                 print_block($index);
             }
             else {
