@@ -41,7 +41,7 @@ my ( $cur_start, $max_start, $max_end, $cur_weekdays_start, $max_weekdays_start,
 sub process {
     init_cal_stuff();
     my $extra_args = "";
-    $extra_args = " --author=" . $author if $author;
+    $extra_args = " --author=\"$author\"" if $author;
     if ($filepath) {
         if ( -e $filepath ) {
             $extra_args .= " -- " . $filepath;
