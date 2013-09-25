@@ -48,38 +48,11 @@ sub process {
         process_github_contributions();
     }
     else {
-        my $extra_args = "";
-        $extra_args = " --author=\"$author\"" if $author;
-        if ($filepath) {
-            if ( -e $filepath ) {
-                $extra_args .= " -- " . $filepath;
-            }
-            else {
-                print "fatal: $filepath do not exists\n";
-                exit(2);
-            }
-        }
-        my $git_command = "git log --no-merges --pretty=format:\"%at\" --since=\"13 months\"" . $extra_args;    #commits might not be in strict time order, check some past too
-        my $epochs      = qx/$git_command/;
-        if ($?) {
-            print "fatal: git-cal failed to get the git log\n";
-            exit(2);
-        }
-        my @epochs = split /\n/, $epochs;
-        if ( !@epochs ) {
-            print "git-cal: got empty log, nothing to do\n";
-            exit(1);
-        }
-        my $status;
-        foreach (@epochs) {
-            $status = add_epoch($_);
-            last if !$status;
-        }
+        process_current_repo();
     }
     compute_stats();
     print_grid();
 }
-
 
 sub process_github_contributions {
         my $content = get("https://github.com/users/" . $github_username . "/contributions_calendar_data");
@@ -96,6 +69,39 @@ sub process_github_contributions {
         }
 }
 
+sub process_current_repo {
+    my $git_command = git_command();
+    my @epochs      = qx/$git_command/;
+    if ($?) {
+        print "fatal: git-cal failed to get the git log\n";
+        exit(2);
+    }
+    if ( !@epochs ) {
+        print "git-cal: got empty log, nothing to do\n";
+        exit(1);
+    }
+    my $status;
+    foreach (@epochs) {
+        $status = add_epoch($_);
+        last if !$status;
+    }
+}
+
+
+sub git_command {
+    my $command = qq{git log --no-merges --pretty=format:"%at" --since="13 months"};
+    $command .= qq{ --author="$author"} if $author;
+    if ($filepath) {
+        if ( -e $filepath ) {
+            $command .= qq{ -- $filepath};
+        }
+        else {
+            print "fatal: $filepath do not exists\n";
+            exit(2);
+        }
+    }
+    return $command;
+}
 
 sub init_cal_stuff {
     my ( $wday, $yday, $month, $year ) = ( localtime(time) )[ 6, 7, 4, 5 ];
