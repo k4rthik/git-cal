@@ -29,8 +29,8 @@ make install
 ```
 
 ### TODO
-- Support --github=<username> parameter to pull activity calendar using github api (if possible/authenticated, get private repos too)
 - Support more statistics like commits per month/week etc
 - May be add a small conf file to customize colors/characters.
+- Show data from multiple repositories in a single place ( https://github.com/k4rthik/git-cal/issues/16 )
 - Make the code pretty and modular so that will be easy to extend.
 
