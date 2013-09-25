@@ -29,7 +29,6 @@ make install
 ```
 
 ### TODO
-- Fix issue with --author parameter, this might mean finding an alternative to Getopt::Long.
 - Support --github=<username> parameter to pull activity calendar using github api (if possible/authenticated, get private repos too)
 - Support more statistics like commits per month/week etc
 - May be add a small conf file to customize colors/characters.
