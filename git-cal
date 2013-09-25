@@ -4,17 +4,21 @@ use strict;
 use utf8;
 use Getopt::Long;
 use Pod::Usage;
+use Time::Local;
+use LWP::Simple;
+use JSON::PP qw ( decode_json );
 use Data::Dumper;
 
 binmode(STDOUT, ":utf8");
 #command line options
-my ( $help, $period, $use_ascii, $author, $filepath );
+my ( $help, $period, $use_ascii, $author, $filepath, $github_username );
 
 GetOptions(
     'help|?'     => \$help,
     'period|p=n' => \$period,
     'ascii'      => \$use_ascii,
     'author=s'     => \$author,
+    'github|gh=s'  => \$github_username
 ) or pod2usage(2);
 pod2usage(1) if $help;
 
@@ -40,35 +44,56 @@ my ( $cur_start, $max_start, $max_end, $cur_weekdays_start, $max_weekdays_start,
 
 sub process {
     init_cal_stuff();
-    my $extra_args = "";
-    $extra_args = " --author=\"$author\"" if $author;
-    if ($filepath) {
-        if ( -e $filepath ) {
-            $extra_args .= " -- " . $filepath;
+    if ($github_username) {
+        process_github_contributions();
+    }
+    else {
+        my $extra_args = "";
+        $extra_args = " --author=\"$author\"" if $author;
+        if ($filepath) {
+            if ( -e $filepath ) {
+                $extra_args .= " -- " . $filepath;
+            }
+            else {
+                print "fatal: $filepath do not exists\n";
+                exit(2);
+            }
         }
-        else {
-            print "fatal: $filepath do not exists\n";
+        my $git_command = "git log --no-merges --pretty=format:\"%at\" --since=\"13 months\"" . $extra_args;    #commits might not be in strict time order, check some past too
+        my $epochs      = qx/$git_command/;
+        if ($?) {
+            print "fatal: git-cal failed to get the git log\n";
             exit(2);
         }
-    }
-    my $git_command = "git log --no-merges --pretty=format:\"%at\" --since=\"13 months\"" . $extra_args;    #commits might not be in strict time order, check some past too
-    my $epochs = qx/$git_command/;
-    if ($?) {
-        print "fatal: git-cal failed to get the git log\n";
-        exit(2);
-    }
-    my @epochs = split /\n/, $epochs;
-    if (! @epochs) {
-        print "git-cal: got empty log, nothing to do\n";
-        exit(1);
-    }
-    my $status;
-    foreach (@epochs) {
-        $status = add_epoch($_);
-        last if !$status;
+        my @epochs = split /\n/, $epochs;
+        if ( !@epochs ) {
+            print "git-cal: got empty log, nothing to do\n";
+            exit(1);
+        }
+        my $status;
+        foreach (@epochs) {
+            $status = add_epoch($_);
+            last if !$status;
+        }
     }
     compute_stats();
     print_grid();
+}
+
+
+sub process_github_contributions {
+        my $content = get("https://github.com/users/" . $github_username . "/contributions_calendar_data");
+        my $result = decode_json ( $content ) if $content;
+        if (!$content || !$result) {
+           print "fatal: could not get github contributions data of " . $github_username . "\n";
+           exit(1);
+         }
+        foreach my $contrib (@$result) {
+            next if !$contrib->[1];
+            my ( $year, $mon, $mday ) = split "/", $contrib->[0];
+            my $epoch = timelocal( 0, 0, 0, $mday, $mon-1, $year );
+            add_epoch( $epoch, $contrib->[1] );
+        }
 }
 
 
@@ -125,7 +150,7 @@ sub init_cal_stuff {
 
 
 sub add_epoch {
-    my $epoch = shift;
+    my ($epoch, $count) = @_;
     if ( $epoch > $max_epoch || $epoch < $min_epoch ) {
         return 1;
     }
@@ -139,15 +164,16 @@ sub add_epoch {
         $pos = ( $jan1 - ( $total - $yday ) );
     }
     return 0 if $pos < 0;    #just in case
-    add_to_grid( $pos, $epoch );
+    add_to_grid( $pos, $epoch, $count );
     return 1;
 }
 
 sub add_to_grid {
-    my ( $pos, $epoch ) = @_;
+    my ( $pos, $epoch, $count ) = @_;
+    $count ||= 1;
     my $r = int $pos / 7;
     my $c = $pos % 7;
-    $grid[$r][$c]->{commits}++;
+    $grid[$r][$c]->{commits}+=$count;
     $grid[$r][$c]->{epoch} = $epoch;
     $max_commits = $grid[$r][$c]->{commits} if $grid[$r][$c]->{commits} > $max_commits;
 }
@@ -360,6 +386,10 @@ Shows only one month (1=Jan .. 12=Dec)
 Shows the last n months (and the current month)
 
 =back
+
+=item --github|gh=<github_username>
+
+Show public contributions data from github
 
 =item --help|?
 
