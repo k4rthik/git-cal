@@ -246,14 +246,8 @@ sub print_grid {
 sub print_block {
     my $index = shift;
     $index = 4 if $index > 4;
-    if ($use_ascii) {
-        print "${ascii[$index]} ";
-    } else {
-        my $c     = $colors[$index];
-        #always show on a black background, else it looks different (sometimes really bad ) with different settings.
-        #print "\e[40;38;5;${c}m⬛ \e[0m";
-        print "\e[40;38;5;${c}m\x{25fc} \e[0m";
-    }
+    print $use_ascii ? "${ascii[$index]} "
+                     : "\e[40;38;5;$colors[$index]m\x{25fc} \e[0m";
 }
 
 sub print_month_names {
