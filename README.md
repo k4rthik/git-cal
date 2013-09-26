@@ -13,7 +13,6 @@ on your terminal
 
 ### Install
 
-Just drop the script anywhere in $PATH or
 - with root access:
 ```
 perl Makefile.PL
