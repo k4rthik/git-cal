@@ -1,20 +1,22 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use strict;
 use warnings;
 
 use utf8;
 use Getopt::Long;
 use Pod::Usage;
+use POSIX 'mktime';
 use Data::Dumper;
 
 binmode(STDOUT, ":utf8");
 #command line options
-my ( $help, $period, $author, $filepath );
+my ( $help, $period, $author, $filepath, $from_github );
 
 GetOptions(
     'help|?'     => \$help,
     'period|p=n' => \$period,
-    'author=s'     => \$author,
+    'author=s'   => \$author,
+    'github'     => \$from_github,
 ) or pod2usage(2);
 pod2usage(1) if $help;
 
@@ -27,7 +29,7 @@ $filepath = shift @ARGV;
 my @colors = ( 237, 157, 155, 47, 2 );
 my @months = qw (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 
-process();
+$from_github ? process_github() : process();
 
 # 53 X 7 grid
 # consists of 0 - 370 blocks
@@ -70,6 +72,26 @@ sub process {
     print_grid();
 }
 
+sub process_github {
+    eval {
+        require Net::GitHub::V3::Users;
+        Net::GitHub::V3::Users->VERSION('0.54');
+        1;
+    } or do {
+        die $@ unless $@ =~ m/\@INC/;
+        print "fatal: Net::GitHub >= 0.54 required for this feature.\n";
+        exit 3;
+    };
+    init_cal_stuff();
+    $author ||= $ENV{USER};
+    for my $day ( Net::GitHub::V3::Users->new->contributions($author) ) {
+        my ($year, $month, $mday) = split m|/|, $day->[0];
+        my $epoch = mktime(0, 0, 12, $mday, $month - 1, $year - 1900);
+        add_epoch($epoch) for 1 .. $day->[1];
+    }
+    compute_stats();
+    print_grid();
+}
 
 sub init_cal_stuff {
     my ( $wday, $yday, $month, $year ) = ( localtime(time) )[ 6, 7, 4, 5 ];
@@ -349,6 +371,7 @@ The calendar shows how frequently the commits are made over the past year or som
 
   --author              view commits of a particular author (passed to git log --author= )
   --period|p            Do not show the entire year, p=1 to 12 shows only one month (1 = Jan .. 12 = Dec), p=-1 to -11 shows last p months and the current month
+  --github|g            show contribution graph for --author on GitHub.com (requires Net::GitHub >= 0.54)
   --help|?              help me
 
 =head2 ADDITIONAL OPTIONS
