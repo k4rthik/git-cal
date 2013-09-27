@@ -1,5 +1,7 @@
 #!/usr/bin/perl
+
 use strict;
+use warnings;
 
 use utf8;
 use Getopt::Long;
@@ -38,8 +40,6 @@ process();
 # consists of 0 - 370 blocks
 my ( @grid, @timeline, %pos_month, %month_pos, $jan1, $cur_year, $max_epoch, $min_epoch, $max_commits, $q1, $q2, $q3 );
 my ( $first_block, $last_block, $start_block, $end_block, $row_start, $row_end );
-my ( $total_commits, $max_streak, $cur_streak, $max_streak_weekdays, $cur_streak_weekdays );
-my ( $cur_start, $max_start, $max_end, $cur_weekdays_start, $max_weekdays_start, $max_weekdays_end );
 #loads of global variables
 
 sub process {
@@ -50,8 +50,8 @@ sub process {
     else {
         process_current_repo();
     }
-    compute_stats();
-    print_grid();
+    my %stats = compute_stats();
+    print_grid(%stats);
 }
 
 sub process_github_contributions {
@@ -72,10 +72,12 @@ sub process_github_contributions {
 sub process_current_repo {
     my $git_command = git_command();
     my @epochs      = qx/$git_command/;
+
     if ($?) {
         print "fatal: git-cal failed to get the git log\n";
         exit(2);
     }
+
     if ( !@epochs ) {
         print "git-cal: got empty log, nothing to do\n";
         exit(1);
@@ -86,7 +88,6 @@ sub process_current_repo {
         last if !$status;
     }
 }
-
 
 sub git_command {
     my $command = qq{git log --no-merges --pretty=format:"%at" --since="13 months"};
@@ -149,9 +150,6 @@ sub init_cal_stuff {
     $max_epoch = time - 86400 * ( $last_block - $end_block );
     $min_epoch = time - 86400 * ( $last_block - $start_block );
 
-    ( $total_commits, $max_streak, $cur_streak, $max_streak_weekdays, $cur_streak_weekdays ) = (0) x 5;
-    ( $cur_start, $max_start, $max_end, $cur_weekdays_start, $max_weekdays_start, $max_weekdays_end ) = (0) x 6;
-
 }
 
 
@@ -187,6 +185,24 @@ sub add_to_grid {
 
 sub compute_stats {
     my %commit_counts;
+
+    my (
+      $total_commits,
+      $cur_streak,
+      $cur_start,
+      $max_streak,
+      $max_start,
+      $max_end,
+      $cur_streak_weekdays,
+      $cur_weekdays_start,
+      $max_streak_weekdays,
+      $max_weekdays_start,
+      $max_weekdays_end,
+      $q1,
+      $q2,
+      $q3,
+    ) = (0) x 14;
+
     foreach my $r ( $row_start .. $row_end ) {
         foreach my $c ( 0 .. 6 ) {
             my $cur_block = ( $r * 7 ) + $c;
@@ -196,7 +212,7 @@ sub compute_stats {
                 if ($count) {
                     $commit_counts{$count} = 1;
                     $cur_streak++;
-                    $cur_start = $grid[$r][$c]->{epoch} if $cur_start == 0;
+                    $cur_start ||= $grid[$r][$c]->{epoch};
                     if ( $cur_streak > $max_streak ) {
                         $max_streak = $cur_streak;
                         $max_start  = $cur_start;
@@ -205,7 +221,7 @@ sub compute_stats {
 
                     #count++ if you work on weekends and streak will not be broken otherwise :)
                     $cur_streak_weekdays++;
-                    $cur_weekdays_start = $grid[$r][$c]->{epoch} if $cur_weekdays_start == 0;
+                    $cur_weekdays_start ||= $grid[$r][$c]->{epoch};
                     if ( $cur_streak_weekdays > $max_streak_weekdays ) {
                         $max_streak_weekdays = $cur_streak_weekdays;
                         $max_weekdays_start  = $cur_weekdays_start;
@@ -232,9 +248,33 @@ sub compute_stats {
 
     #print "commit counts: " . (scalar @commit_counts) . " - " . (join ",",@commit_counts) . "\n\n";
     #print "quartiles: $q1 $q2 $q3\n";
+
+    #die Dumper \%stat;
+
+    my %stat = (
+      total_commits => $total_commits,
+      cur_streak    => $cur_streak  ,
+      cur_start     => $cur_start   ,
+      max_streak    => $max_streak  ,
+      max_start     => $max_start   ,
+      max_end       => $max_end     ,
+      cur_streak_weekdays => $cur_streak_weekdays,
+      cur_weekdays_start  => $cur_weekdays_start,
+      max_streak_weekdays => $max_streak_weekdays,
+      max_weekdays_start  => $max_weekdays_start,
+      max_weekdays_end    => $max_weekdays_end  ,
+      q1 => $q1,
+      q2 => $q2,
+      q3 => $q3,
+    );
+
+
+    return %stat;
 }
 
 sub print_grid {
+    my %stat = @_;
+
     my $space = 6;
     print_month_names($space);
     foreach my $c ( 0 .. 6 ) {
@@ -250,11 +290,11 @@ sub print_grid {
             if ( $cur_block >= $start_block && $cur_block < $end_block ) {
                 my $val = $grid[$r][$c]->{commits} || 0;
 
-                my $index = $val == 0   ? 0
-                          : $val <= $q1 ? 1
-                          : $val <= $q2 ? 2
-                          : $val <= $q3 ? 3
-                                        : 4;
+                my $index = $val == 0         ? 0
+                          : $val <= $stat{q1} ? 1
+                          : $val <= $stat{q2} ? 2
+                          : $val <= $stat{q3} ? 3
+                                              : 4;
 
                 print_block($index);
             }
@@ -268,10 +308,10 @@ sub print_grid {
     print_block($_) foreach ( 0 .. 4 );
     print " More\n";
 
-    printf "%4d: Total commits\n", $total_commits;
-    print_message( $max_streak_weekdays, $max_weekdays_start, $max_weekdays_end, "Longest streak excluding weekends" );
-    print_message( $max_streak,          $max_start,          $max_end,          "Longest streak including weekends" );
-    print_message( $cur_streak_weekdays, $cur_weekdays_start, time,              "Current streak" );
+    printf "%4d: Total commits\n", $stat{total_commits};
+    print_message( $stat{max_streak_weekdays}, $stat{max_weekdays_start}, $stat{max_weekdays_end}, "Longest streak excluding weekends" );
+    print_message( $stat{max_streak},          $stat{max_start},          $stat{max_end},          "Longest streak including weekends" );
+    print_message( $stat{cur_streak_weekdays}, $stat{cur_weekdays_start}, time,              "Current streak" );
 }
 
 
