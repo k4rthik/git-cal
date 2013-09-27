@@ -72,10 +72,12 @@ sub process_github_contributions {
 sub process_current_repo {
     my $git_command = git_command();
     my @epochs      = qx/$git_command/;
+
     if ($?) {
         print "fatal: git-cal failed to get the git log\n";
         exit(2);
     }
+
     if ( !@epochs ) {
         print "git-cal: got empty log, nothing to do\n";
         exit(1);
@@ -86,7 +88,6 @@ sub process_current_repo {
         last if !$status;
     }
 }
-
 
 sub git_command {
     my $command = qq{git log --no-merges --pretty=format:"%at" --since="13 months"};
