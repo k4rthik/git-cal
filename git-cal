@@ -399,7 +399,7 @@ The calendar shows how frequently the commits are made over the past year or som
 
   git-cal
 
-  git-cal --period=<1..12>
+  git-cal --period=<1..12 , -1..-11>
 
   git-cal --author=<author> -- <filepath>
 
