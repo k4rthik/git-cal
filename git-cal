@@ -13,11 +13,24 @@ use Data::Dumper;
 
 binmode(STDOUT, ":utf8");
 #command line options
-my ( $help, $period, $use_ascii, $author, $filepath, $github_username );
+my ( $help, $period, $use_ascii, $format, $author, $filepath, $github_username );
+
+# let's pick some environmentally smart setups; if this is Emacs, we don't get color.
+# unicode works, though.
+if ($ENV{EMACS}) {
+    $format = 'unicode';
+}
+elsif ($ENV{TERM} eq 'dumb') {
+    $format = 'ascii';
+}
+else {
+    $format = 'ansi';
+}
 
 GetOptions(
     'help|?'     => \$help,
     'period|p=n' => \$period,
+    'format=s'   => \$format,
     'ascii'      => \$use_ascii,
     'author=s'     => \$author,
     'github|gh=s'  => \$github_username
@@ -30,6 +43,7 @@ $filepath = shift @ARGV;
 #qw(⬚ ⬜ ▤ ▣ ⬛)
 #qw(⬚ ▢ ▤ ▣ ⬛)
 
+my @unicode = qw(⬚ ▢ ▤ ▣ ⬛);
 my @colors = ( 237, 157, 155, 47, 2 );
 my @ascii = ( " ", ".", "o", "O", "0" );
 my @months = qw (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
@@ -318,8 +332,18 @@ sub print_grid {
 sub print_block {
     my $index = shift;
     $index = 4 if $index > 4;
-    print $use_ascii ? "${ascii[$index]} "
-                     : "\e[40;38;5;$colors[$index]m\x{25fc} \e[0m";
+
+    if ($use_ascii) {
+        $format = "ascii";
+    }
+
+    if ($format eq "ascii") { $_ = "${ascii[$index]} " }
+    elsif ($format eq "unicode") { $_ = "${unicode[$index]} " }
+    elsif ($format eq "ansi") { $_ = "\e[40;38;5;$colors[$index]m\x{25fc} \e[0m" }
+    else { $_ = "\e[40;38;5;$colors[$index]m\x{25fc} \e[0m" }
+    print;
+    # print $use_ascii ? "${ascii[$index]} "
+    #                  : "\e[40;38;5;$colors[$index]m\x{25fc} \e[0m";
 }
 
 sub print_month_names {
