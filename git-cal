@@ -42,7 +42,7 @@ process();
 
 # 53 X 7 grid
 # consists of 0 - 370 blocks
-my ( @grid, @timeline, %pos_month, %month_pos, $jan1, $cur_year, $max_epoch, $min_epoch, $max_commits );
+my ( @grid, @timeline, %pos_month, %month_pos, $max_epoch, $min_epoch, $max_commits );
 my ( $first_block, $last_block, $start_block, $end_block, $row_start, $row_end );
 #loads of global variables
 
@@ -60,7 +60,10 @@ sub process {
           : $ENV{TERM} eq 'dumb' ? 'ascii'
           :                        'ansi';
     }
-    init_cal_stuff();
+
+    my %calendar = calendar();
+    init_cal_stuff(%calendar);
+
     if ($github_username) {
         process_github_contributions();
     }
@@ -122,10 +125,28 @@ sub git_command {
     return $command;
 }
 
+sub calendar {
+    my $epoch = shift || time;
+
+    my ( $month, $year, $wday, $yday ) = ( localtime($epoch) )[ 4, 5, 6, 7 ];
+
+    my $cur_year = $year;
+    my $jan1     = 370 - ( $yday + 6 - $wday );
+
+    return (
+        month => $month,
+        year  => $year,
+        wday  => $wday,
+        yday  => $yday,
+        jan1  => 370 - ( $yday + 6 - $wday )
+    );
+}
+
 sub init_cal_stuff {
-    my ( $wday, $yday, $month, $year ) = ( localtime(time) )[ 6, 7, 4, 5 ];
-    $cur_year    = $year;
-    $jan1        = 370 - ( $yday + 6 - $wday );
+    my %cal = calendar();
+
+    my ($month, $year, $wday, $yday, $jan1) = @cal{ qw/ month year wday yday jan1 / };
+
     $last_block  = $jan1 + $yday + 1;
     $first_block = $last_block - 365;
     $max_commits = 0;
@@ -167,16 +188,21 @@ sub init_cal_stuff {
     $row_end   = int $end_block / 7;
     $max_epoch = time - 86400 * ( $last_block - $end_block );
     $min_epoch = time - 86400 * ( $last_block - $start_block );
-
 }
 
 
 sub add_epoch {
     my ($epoch, $count) = @_;
+
     if ( $epoch > $max_epoch || $epoch < $min_epoch ) {
         return 1;
     }
-    my ( $month, $year, $wday, $yday ) = ( localtime($epoch) )[ 4, 5, 6, 7 ];
+    my %cal = calendar();
+    my ($cur_year,$jan1) = @cal{ qw/year jan1/ };
+
+    my %cal_epoch = calendar($epoch);
+    my ($year, $yday) = @cal_epoch{ qw/year yday/ };
+
     my $pos;
     if ( $year == $cur_year ) {
         $pos = ( $jan1 + $yday );
