@@ -61,7 +61,11 @@ sub process {
           :                        'ansi';
     }
 
-    init_cal_stuff();
+    $max_commits = 0;
+
+    populate_timeline();
+
+    calculate_blocks();
 
     if ($github_username) {
         process_github_contributions();
@@ -142,24 +146,23 @@ sub calendar {
     );
 }
 
-sub init_cal_stuff {
+sub populate_timeline {
     my %cal = calendar();
 
-    my ($time, $month, $year, $wday, $yday, $jan1) = @cal{ qw/ timestamp month year wday yday jan1 / };
+    my ($year, $month, $jan1) = @cal{ qw/year month jan1/ };
 
-    $last_block  = $jan1 + $yday + 1;
-    $first_block = $last_block - 365;
-    $max_commits = 0;
+    my (@timeline, %month_pos);
 
     push @timeline, $jan1;
     $month_pos{0} = $jan1;
-    my $cur = $jan1;
 
+    my $cur = $jan1;
     foreach ( 0 .. $month - 1 ) {
         $cur += number_of_days( $_, $year );
         push @timeline, $cur;
         $month_pos{ $_ + 1 } = $cur;
     }
+
     $cur = $jan1;
     for ( my $m = 11; $m > $month; $m-- ) {
         $cur -= number_of_days( $m, $year - 1 );
@@ -168,6 +171,15 @@ sub init_cal_stuff {
     }
 
     $pos_month{ $month_pos{$_} } = $months[$_] foreach keys %month_pos;
+}
+
+sub calculate_blocks {
+    my %cal = calendar();
+
+    my ($time, $month, $year, $wday, $yday, $jan1) = @cal{ qw/ timestamp month year wday yday jan1 / };
+
+    $last_block  = $jan1 + $yday + 1;
+    $first_block = $last_block - 365;
 
     die "period can only be between -11 to -1 and 1 to 12" if ( defined $period && ( $period < -11 || $period > 12 || $period == 0 ) );
     $period = 0 if !defined $period;
