@@ -61,8 +61,7 @@ sub process {
           :                        'ansi';
     }
 
-    my %calendar = calendar();
-    init_cal_stuff(%calendar);
+    init_cal_stuff();
 
     if ($github_username) {
         process_github_contributions();
@@ -134,6 +133,7 @@ sub calendar {
     my $jan1     = 370 - ( $yday + 6 - $wday );
 
     return (
+        timestamp => $epoch,
         month => $month,
         year  => $year,
         wday  => $wday,
@@ -145,11 +145,12 @@ sub calendar {
 sub init_cal_stuff {
     my %cal = calendar();
 
-    my ($month, $year, $wday, $yday, $jan1) = @cal{ qw/ month year wday yday jan1 / };
+    my ($time, $month, $year, $wday, $yday, $jan1) = @cal{ qw/ timestamp month year wday yday jan1 / };
 
     $last_block  = $jan1 + $yday + 1;
     $first_block = $last_block - 365;
     $max_commits = 0;
+
     push @timeline, $jan1;
     $month_pos{0} = $jan1;
     my $cur = $jan1;
@@ -186,8 +187,8 @@ sub init_cal_stuff {
     }
     $row_start = int $start_block / 7;
     $row_end   = int $end_block / 7;
-    $max_epoch = time - 86400 * ( $last_block - $end_block );
-    $min_epoch = time - 86400 * ( $last_block - $start_block );
+    $max_epoch = $time - 86400 * ( $last_block - $end_block );
+    $min_epoch = $time - 86400 * ( $last_block - $start_block );
 }
 
 
