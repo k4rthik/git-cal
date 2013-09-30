@@ -42,7 +42,7 @@ process();
 
 # 53 X 7 grid
 # consists of 0 - 370 blocks
-my ( @grid, @timeline, %pos_month, %month_pos, $jan1, $cur_year, $max_epoch, $min_epoch, $max_commits, $q1, $q2, $q3 );
+my ( @grid, @timeline, %pos_month, %month_pos, $jan1, $cur_year, $max_epoch, $min_epoch, $max_commits );
 my ( $first_block, $last_block, $start_block, $end_block, $row_start, $row_end );
 #loads of global variables
 
