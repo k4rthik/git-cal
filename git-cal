@@ -7,8 +7,6 @@ use utf8;
 use Getopt::Long;
 use Pod::Usage;
 use Time::Local;
-use LWP::Simple;
-use JSON::PP qw ( decode_json );
 use Data::Dumper;
 
 binmode(STDOUT, ":utf8");
