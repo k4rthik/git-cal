@@ -13,15 +13,18 @@ use Data::Dumper;
 
 binmode(STDOUT, ":utf8");
 #command line options
-my ( $help, $period, $use_ascii, $author, $filepath, $github_username );
+my ( $help, $period, $use_ascii, $use_ansi, $use_unicode, $format, $author, $filepath, $github_username );
 
 GetOptions(
-    'help|?'     => \$help,
-    'period|p=n' => \$period,
-    'ascii'      => \$use_ascii,
-    'author=s'     => \$author,
-    'github|gh=s'  => \$github_username
+    'help|?'      => \$help,
+    'period|p=n'  => \$period,
+    'ascii'       => \$use_ascii,
+    'ansi'        => \$use_ansi,
+    'unicode'     => \$use_unicode,
+    'author=s'    => \$author,
+    'github|gh=s' => \$github_username
 ) or pod2usage(2);
+
 pod2usage(1) if $help;
 
 $filepath = shift @ARGV;
@@ -30,6 +33,7 @@ $filepath = shift @ARGV;
 #qw(⬚ ⬜ ▤ ▣ ⬛)
 #qw(⬚ ▢ ▤ ▣ ⬛)
 
+my @unicode = qw(⬚ ▢ ▤ ▣ ⬛);
 my @colors = ( 237, 157, 155, 47, 2 );
 my @ascii = ( " ", ".", "o", "O", "0" );
 my @months = qw (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
@@ -43,6 +47,19 @@ my ( $first_block, $last_block, $start_block, $end_block, $row_start, $row_end )
 #loads of global variables
 
 sub process {
+    $format
+      = $use_ansi    ? 'ansi'
+      : $use_ascii   ? 'ascii'
+      : $use_unicode ? 'unicode'
+      :                undef;
+
+    #if the user decided not to choose the format, let's pick some environmentally smart format
+    if ( !defined $format ) {
+        $format
+          = $ENV{EMACS} ? 'unicode'
+          : $ENV{TERM} eq 'dumb' ? 'ascii'
+          :                        'ansi';
+    }
     init_cal_stuff();
     if ($github_username) {
         process_github_contributions();
@@ -53,6 +70,7 @@ sub process {
     my %stats = compute_stats();
     print_grid(%stats);
 }
+
 
 sub process_github_contributions {
         my $content = get("https://github.com/users/" . $github_username . "/contributions_calendar_data");
@@ -318,9 +336,13 @@ sub print_grid {
 sub print_block {
     my $index = shift;
     $index = 4 if $index > 4;
-    print $use_ascii ? "${ascii[$index]} "
-                     : "\e[40;38;5;$colors[$index]m\x{25fc} \e[0m";
+    $_
+      = ( $format eq "ascii" ) ? "${ascii[$index]} "
+      : ( $format eq "unicode" ) ? "${unicode[$index]} "
+      :                            "\e[40;38;5;$colors[$index]m\x{25fc} \e[0m";
+    print;
 }
+
 
 sub print_month_names {
     #print month labels, printing current month in the right position is tricky
@@ -396,18 +418,27 @@ git-cal - A simple tool to view commits calendar (similar to github contribution
 
 "git-cal" is a tool to visualize the git commit history in github's contribution calendar style.
 The calendar shows how frequently the commits are made over the past year or some choosen period
+Activity can be displayed using ascii, ansi or unicode characters, default is choosen based on ENV
 
   git-cal
 
-  git-cal --period=<1..12>
+  git-cal --period=<1..12 , -1..-11>
 
   git-cal --author=<author> -- <filepath>
 
   git-cal --ascii
 
+  git-cal --ansi
+
+  git-cal --unicode
+
 =head2 OPTIONS
 
 =over
+
+=item --ansi
+
+Display activity using ANSI colors
 
 =item --ascii
 
@@ -420,6 +451,10 @@ View commits of a particular author.
 =item --period|p=<n>
 
 Do not show the entire year:
+
+=item --unicode
+
+Display activity using unicode characters
 
 =over
 
