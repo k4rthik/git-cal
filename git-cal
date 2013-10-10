@@ -432,7 +432,7 @@ Activity can be displayed using ascii, ansi or unicode characters, default is ch
 
   git-cal --unicode
 
-  git-cal <filepath>
+  git-cal <options> <filepath>
 
 =head2 OPTIONS
 
