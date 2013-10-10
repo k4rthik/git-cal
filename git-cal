@@ -432,7 +432,7 @@ Activity can be displayed using ascii, ansi or unicode characters, default is ch
 
   git-cal --unicode
 
-  git-cal -- <filepath>
+  git-cal <filepath>
 
 =head2 OPTIONS
 
@@ -482,7 +482,7 @@ Print this message.
 
 =head2 ADDITIONAL OPTIONS
 
-  -- filename to view the logs of a particular file or directory
+<filename> to view the logs of a particular file or directory
 
 =head1 AUTHOR
 
