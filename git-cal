@@ -438,7 +438,7 @@ Activity can be displayed using ascii, ansi or unicode characters, default is ch
 
 =over
 
-=item --period|p=<n>
+=item [--period|-p]=<n>
 
 Do not show the entire year:
 
@@ -458,7 +458,7 @@ Shows the last n months (and the current month)
 
 View commits of a particular author.
 
-=item --github|gh=<github_username>
+=item [--github|-gh]=<github_username>
 
 Show public contributions data from github
 
@@ -474,7 +474,7 @@ Display activity using ANSI colors
 
 Display activity using unicode characters
 
-=item --help|?
+=item --help|-?
 
 Print this message.
 
