@@ -438,18 +438,6 @@ Activity can be displayed using ascii, ansi or unicode characters, default is ch
 
 =over
 
-=item --ansi
-
-Display activity using ANSI colors
-
-=item --ascii
-
-Display activity using ASCII characters instead of ANSI colors.
-
-=item --author=<author>
-
-View commits of a particular author.
-
 =item --period|p=<n>
 
 Do not show the entire year:
@@ -466,13 +454,25 @@ Shows the last n months (and the current month)
 
 =back
 
-=item --unicode
+=item --author=<author>
 
-Display activity using unicode characters
+View commits of a particular author.
 
 =item --github|gh=<github_username>
 
 Show public contributions data from github
+
+=item --ascii
+
+Display activity using ASCII characters instead of ANSI colors.
+
+=item --ansi
+
+Display activity using ANSI colors
+
+=item --unicode
+
+Display activity using unicode characters
 
 =item --help|?
 
