@@ -426,6 +426,8 @@ Activity can be displayed using ascii, ansi or unicode characters, default is ch
 
   git-cal --author=<author>
 
+  git-cal --github=<github_username>
+
   git-cal --ascii
 
   git-cal --ansi
