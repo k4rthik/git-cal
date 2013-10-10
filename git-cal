@@ -482,7 +482,7 @@ Print this message.
 
 =head2 ADDITIONAL OPTIONS
 
-<filename> to view the logs of a particular file or directory
+<filepath> to view the logs of a particular file or directory
 
 =head1 AUTHOR
 
