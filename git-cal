@@ -115,7 +115,7 @@ sub git_command {
             $command .= qq{ -- $filepath};
         }
         else {
-            print "fatal: $filepath do not exists\n";
+            print "fatal: $filepath: no such file or directory\n";
             exit(2);
         }
     }
