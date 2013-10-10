@@ -424,13 +424,15 @@ Activity can be displayed using ascii, ansi or unicode characters, default is ch
 
   git-cal --period=<1..12 , -1..-11>
 
-  git-cal --author=<author> -- <filepath>
+  git-cal --author=<author>
 
   git-cal --ascii
 
   git-cal --ansi
 
   git-cal --unicode
+
+  git-cal -- <filepath>
 
 =head2 OPTIONS
 
