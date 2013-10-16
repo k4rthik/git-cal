@@ -27,6 +27,11 @@ make
 make install
 ```
 
+- with Homebrew
+```
+brew install git-cal
+```
+
 ### TODO
 - Support more statistics like commits per month/week etc
 - May be add a small conf file to customize colors/characters.
