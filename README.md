@@ -9,7 +9,7 @@ on your terminal
 * git-cal is a simple script to view commits calendar (similar to github contributions calendar) on command line
 * Each block in the graph corresponds to a day and is shaded with one
   of the 5 possible colors, each representing relative number of commits on that day.
-* Opt out from ANSI colors and use few ASCII characters to denote the same.
+* Option to choose --ascii or --unicode to denote the same instead of the ANSI colors.
 
 ### Install
 
