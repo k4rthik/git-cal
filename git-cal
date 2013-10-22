@@ -336,10 +336,10 @@ sub print_grid {
 sub print_block {
     my $index = shift;
     $index = 4 if $index > 4;
-    $_
-      = ( $format eq "ascii" ) ? "${ascii[$index]} "
-      : ( $format eq "unicode" ) ? "${unicode[$index]} "
-      :                            "\e[40;38;5;$colors[$index]m\x{25fc} \e[0m";
+    $_ = "\e[40;38;5;$colors[$index]m" .
+      ( ( $format eq "ascii" ) ? "${ascii[$index]}"
+      : ( $format eq "unicode" ) ? "${unicode[$index]}"
+      :                            "\x{25fc}" ) . " \e[0m";
     print;
 }
 
