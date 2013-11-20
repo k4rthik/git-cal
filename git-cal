@@ -430,7 +430,6 @@ Shows only one month (1=Jan .. 12=Dec)
 
 Shows the last n months (and the current month)
 
-<<<<<<< HEAD
 =back
 
 =item --author=<author>
