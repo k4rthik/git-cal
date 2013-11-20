@@ -7,13 +7,11 @@ use utf8;
 use Getopt::Long;
 use Pod::Usage;
 use Time::Local;
-use LWP::Simple;
-use JSON::PP qw ( decode_json );
 use Data::Dumper;
 
 binmode(STDOUT, ":utf8");
 #command line options
-my ( $help, $period, $use_ascii, $use_ansi, $use_unicode, $format, $author, $filepath, $github_username );
+my ( $help, $period, $use_ascii, $use_ansi, $use_unicode, $format, $author, $filepath );
 
 GetOptions(
     'help|?'      => \$help,
@@ -21,8 +19,7 @@ GetOptions(
     'ascii'       => \$use_ascii,
     'ansi'        => \$use_ansi,
     'unicode'     => \$use_unicode,
-    'author=s'    => \$author,
-    'github|gh=s' => \$github_username
+    'author=s'    => \$author
 ) or pod2usage(2);
 
 pod2usage(1) if $help;
@@ -61,30 +58,9 @@ sub process {
           :                        'ansi';
     }
     init_cal_stuff();
-    if ($github_username) {
-        process_github_contributions();
-    }
-    else {
-        process_current_repo();
-    }
+    process_current_repo();
     my %stats = compute_stats();
     print_grid(%stats);
-}
-
-
-sub process_github_contributions {
-        my $content = get("https://github.com/users/" . $github_username . "/contributions_calendar_data");
-        my $result = decode_json ( $content ) if $content;
-        if (!$content || !$result) {
-           print "fatal: could not get github contributions data of " . $github_username . "\n";
-           exit(1);
-         }
-        foreach my $contrib (@$result) {
-            next if !$contrib->[1];
-            my ( $year, $mon, $mday ) = split "/", $contrib->[0];
-            my $epoch = timelocal( 0, 0, 0, $mday, $mon-1, $year );
-            add_epoch( $epoch, $contrib->[1] );
-        }
 }
 
 sub process_current_repo {
@@ -454,6 +430,7 @@ Shows only one month (1=Jan .. 12=Dec)
 
 Shows the last n months (and the current month)
 
+<<<<<<< HEAD
 =back
 
 =item --author=<author>
