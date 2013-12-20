@@ -8,10 +8,13 @@ use Getopt::Long;
 use Pod::Usage;
 use Time::Local;
 use Data::Dumper;
+use LWP::UserAgent;
+use HTTP::Request::Common;
+use JSON;
 
 binmode(STDOUT, ":utf8");
 #command line options
-my ( $help, $period, $use_ascii, $use_ansi, $use_unicode, $format, $author, $filepath );
+my ( $help, $period, $use_ascii, $use_ansi, $use_unicode, $format, $author, $filepath, $github );
 
 GetOptions(
     'help|?'      => \$help,
@@ -19,7 +22,9 @@ GetOptions(
     'ascii'       => \$use_ascii,
     'ansi'        => \$use_ansi,
     'unicode'     => \$use_unicode,
-    'author=s'    => \$author
+    'author=s'    => \$author,
+    'github=s'    => \$github
+    
 ) or pod2usage(2);
 
 pod2usage(1) if $help;
@@ -58,9 +63,37 @@ sub process {
           :                        'ansi';
     }
     init_cal_stuff();
-    process_current_repo();
+    if ($github) {
+        process_contributions_calendar();
+    }
+    else {
+        process_current_repo();
+    }
     my %stats = compute_stats();
     print_grid(%stats);
+}
+
+sub process_contributions_calendar {
+    
+    my $ua = LWP::UserAgent->new;
+    my $req = GET 'https://github.com/users/' . $github . '/contributions_calendar_data';
+    my $res = $ua->request($req);
+    
+    if ($res->code == 404) {
+        print 'Username ' . $github . ' is may be invalid.\n';
+        exit(1);
+    }
+    
+    my @decodedContent = @{decode_json($res->content)};
+    my $status;
+    foreach (@decodedContent) {
+        my ($year,$mon,$mday,$hour,$min,$sec) = split(/[\s\/:]+/, $_->[0] . ' 12:00:00');
+        my $time = timelocal($sec,$min,$hour,$mday,$mon-1,$year);
+        my $i;
+        for ($i=0; $i<$_->[1]; $i++) {
+	        $status = add_epoch($time);
+        }
+    }
 }
 
 sub process_current_repo {
