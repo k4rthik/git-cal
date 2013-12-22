@@ -402,8 +402,6 @@ Activity can be displayed using ascii, ansi or unicode characters, default is ch
 
   git-cal --author=<author>
 
-  git-cal --github=<github_username>
-
   git-cal --ascii
 
   git-cal --ansi
@@ -435,10 +433,6 @@ Shows the last n months (and the current month)
 =item --author=<author>
 
 View commits of a particular author.
-
-=item [--github|-gh]=<github_username>
-
-Show public contributions data from github
 
 =item --ascii
 
