@@ -5,7 +5,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME => 'git-cal',
-    ( $ExtUtils::MakeMaker::VERSION >= 6.3002 ? ( 'LICENSE' => 'mit' ) : () ),
+    ( eval ($ExtUtils::MakeMaker::VERSION) >= 6.3002 ? ( 'LICENSE' => 'mit' ) : () ),
     EXE_FILES => [ 'git-cal', ],
     PL_FILES  => {},
     PREREQ_PM => {},
