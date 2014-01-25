@@ -32,9 +32,3 @@ make install
 brew install git-cal
 ```
 
-### TODO
-- Support more statistics like commits per month/week etc
-- May be add a small conf file to customize colors/characters.
-- Show data from multiple repositories in a single place ( https://github.com/k4rthik/git-cal/issues/16 )
-- Make the code pretty and modular so that will be easy to extend.
-
