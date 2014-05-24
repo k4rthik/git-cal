@@ -297,7 +297,7 @@ sub print_grid {
         }
     }
     print "\n\n";
-    printf "%" . ( 2 * ( $row_end - $row_start ) + $space - 10 ) . "s", "Less ";    #such that the right borders align
+    printf "%" . ( 2 * ( $row_end - $row_start ) + $space - 15 ) . "s", "Less ";    #such that the right borders align
     print_block($_) foreach ( 0 .. 4 );
     print " More\n";
 
