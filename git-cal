@@ -31,7 +31,7 @@ $filepath = shift @ARGV;
 #qw(⬚ ▢ ▤ ▣ ⬛)
 
 my @unicode = qw(⬚ ▢ ▤ ▣ ⬛);
-my @colors = ( 237, 157, 155, 47, 2 );
+my @colors = ( 237, 139, 40, 190, 1 );
 my @ascii = ( " ", ".", "o", "O", "0" );
 my @months = qw (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 
