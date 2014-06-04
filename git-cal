@@ -123,9 +123,8 @@ sub init_cal_stuff {
 
     $pos_month{ $month_pos{$_} } = $months[$_] foreach keys %month_pos;
 
-    die "period can only be between -11 to -1 and 1 to 12" if ( defined $period && ( $period < -11 || $period > 12 || $period == 0 ) );
-    $period = 0 if !defined $period;
-    if ( $period == 0 ) {
+    die "period can only be between -11 to 0 and 1 to 12" if ( defined $period && ( $period < -11 || $period > 12 ) );
+    if ( !defined $period ) {
         $start_block = $first_block;
         $end_block   = $last_block;
     }
@@ -298,7 +297,7 @@ sub print_grid {
         }
     }
     print "\n\n";
-    printf "%" . ( 2 * ( $row_end - $row_start ) + $space - 10 ) . "s", "Less ";    #such that the right borders align
+    printf "%" . ( 2 * ( $row_end - $row_start ) + $space - 15 ) . "s", "Less ";    #such that the right borders align
     print_block($_) foreach ( 0 .. 4 );
     print " More\n";
 
@@ -328,7 +327,7 @@ sub print_month_names {
         return;
     }
     my $label_printer = 0;
-    my $timeline_iter = 11 + ( $period || -11 );
+    my $timeline_iter = defined $period ? 11 + $period : 0;
     if ( $start_block == $first_block && $timeline[0] != 0 ) {
         my $first_pos = int $timeline[0] / 7;
         if ( $first_pos == 0 ) {
@@ -398,7 +397,7 @@ Activity can be displayed using ascii, ansi or unicode characters, default is ch
 
   git-cal
 
-  git-cal --period=<1..12 , -1..-11>
+  git-cal --period=<1..12, -11..0>
 
   git-cal --author=<author>
 
@@ -424,9 +423,9 @@ Do not show the entire year:
 
 Shows only one month (1=Jan .. 12=Dec)
 
-=item n = -1 to -11 
+=item n = -11 to 0
 
-Shows the last n months (and the current month)
+Shows the previous -n months (and the current month)
 
 =back
 
