@@ -2,8 +2,8 @@ git-cal
 =======
 
 ### Description
-![screenshot with black theme](https://raw.github.com/k4rthik/git-cal/master/screenshots/img1.png) 
-![screenshot with white theme](https://raw.github.com/k4rthik/git-cal/master/screenshots/img2.png)
+![screenshot with black theme](https://raw.github.com/mattmartini/git-cal/master/screenshots/img1.png)
+![screenshot with white theme](https://raw.github.com/mattmartini/git-cal/master/screenshots/img2.png)
 on your terminal
 
 * git-cal is a simple script to view commits calendar (similar to github contributions calendar) on command line
