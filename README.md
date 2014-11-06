@@ -10,6 +10,7 @@ on your terminal
 * Each block in the graph corresponds to a day and is shaded with one
   of the 5 possible colors, each representing relative number of commits on that day.
 * Option to choose --ascii or --unicode to denote the same instead of the ANSI colors.
+* Option to use git config to set options.
 
 ### Install
 
