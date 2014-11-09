@@ -35,6 +35,8 @@ my @colors = ( 237, 139, 40, 190, 1 );
 my @ascii = ( " ", ".", "o", "O", "0" );
 my @months = qw (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 
+configure(\$period, \$use_ascii, \$use_ansi, \$use_unicode, \$author);
+
 process();
 
 # 53 X 7 grid
@@ -383,6 +385,36 @@ sub number_of_days {
     return 29;
 }
 
+sub configure {
+    my ($period, $ascii, $ansi, $unicode, $author) = @_;
+    my @wanted;
+    push @wanted, 'format' if (not grep { defined $$_ } ($ascii, $ansi, $unicode));
+    push @wanted, 'period' if (not defined $$period);
+    push @wanted, 'author' if (not defined $$author);
+    if (@wanted) {
+	my $git_command = "git config --get-regexp 'calendar\.*'";
+	my @parts       = split(/\s/, qx/$git_command/);
+	if(@parts) {
+	    my %config;
+	    while(my ($key, $value) = splice(@parts, 0, 2)) {
+		$key =~ s/calendar\.//;
+		$config{$key} = $value;
+	    }
+	    local @ARGV = (map  { ( "-$_" => $config{$_} ) } 
+			   grep { exists $config{$_}       } @wanted);
+	    GetOptions(
+		'period=n'  => $period,
+		'format=s'  => sub {
+		    if    ($_[1] eq 'ascii')   { $$ascii   ||= 1; }
+		    elsif ($_[1] eq 'ansi')    { $$ansi    ||= 1; }
+		    elsif ($_[1] eq 'unicode') { $$unicode ||= 1; }
+		},
+		'author=s'  => $author
+		);
+	}
+    }
+}
+
 __END__
 
 =head1 NAME
@@ -454,6 +486,20 @@ Print this message.
 =head2 ADDITIONAL OPTIONS
 
 <filepath> to view the logs of a particular file or directory
+
+=head2 USING GIT CONFIG
+
+git-cal uses the git config tool to store configuration on disk.  Similar keys are used to 
+those listed above with the notable exception being the bundling of ascii, ansi and unicode
+into a "format" key. Examples of the three supported keys are below.
+
+ git config --global calendar.format ascii
+
+ git config --global calendar.period 5
+
+ git config --global calendar.author karthik
+
+A command line supplied option will override the matching option set using this method.
 
 =head1 AUTHOR
 
