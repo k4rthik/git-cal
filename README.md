@@ -33,3 +33,30 @@ make install
 brew install git-cal
 ```
 
+### Usage
+
+```
+--period|-p=<n>
+    Do not show the entire year:
+
+    n = 1 to 12
+        Shows only one month (1=Jan .. 12=Dec)
+
+    n = -1 to -11
+        Shows the last n months (and the current month)
+
+--author=<author>
+    View commits of a particular author.
+
+--ascii
+    Display activity using ASCII characters instead of ANSI colors.
+
+--ansi
+    Display activity using ANSI colors
+
+--unicode
+    Display activity using unicode characters
+
+--help|-?
+    Print the message helper.
+```
