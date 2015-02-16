@@ -11,7 +11,7 @@ use Data::Dumper;
 
 binmode(STDOUT, ":utf8");
 #command line options
-my ( $help, $period, $use_ascii, $use_ansi, $use_unicode, $format, $author, $filepath );
+my ( $help, $period, $use_ascii, $use_ansi, $use_unicode, $format, $author, $filepath, $all_branches );
 
 GetOptions(
     'help|?'      => \$help,
@@ -19,7 +19,8 @@ GetOptions(
     'ascii'       => \$use_ascii,
     'ansi'        => \$use_ansi,
     'unicode'     => \$use_unicode,
-    'author=s'    => \$author
+    'author=s'    => \$author,
+    'all'         => \$all_branches
 ) or pod2usage(2);
 
 pod2usage(1) if $help;
@@ -88,6 +89,7 @@ sub process_current_repo {
 sub git_command {
     my $command = qq{git log --no-merges --pretty=format:"%at" --since="13 months"};
     $command .= qq{ --author="$author"} if $author;
+    $command .= qq{ --all } if $all_branches;
     if ($filepath) {
         if ( -e $filepath ) {
             $command .= qq{ -- $filepath};
@@ -464,6 +466,10 @@ Shows the previous -n months (and the current month)
 =item --author=<author>
 
 View commits of a particular author.
+
+=item --all
+
+View stats from all branches.
 
 =item --ascii
 
