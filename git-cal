@@ -318,7 +318,7 @@ sub print_block {
     $_
       = ( $format eq "ascii" ) ? "${ascii[$index]} "
       : ( $format eq "unicode" ) ? "${unicode[$index]} "
-      :                            "\e[40;38;5;$colors[$index]m\x{25fc} \e[0m";
+      :                            "\e[38;5;$colors[$index]m\x{25fc} \e[0m";
     print;
 }
 
