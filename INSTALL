@@ -3,12 +3,12 @@ Installation
 
 With root access:
 
-  perl Makefile.pl
+  perl Makefile.PL
   make
   sudo make install
 
 Without root access:
 
-  perl Makefile.pl PREFIX=~/.local
+  perl Makefile.PL PREFIX=~/.local
   make
   make install
