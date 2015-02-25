@@ -11,7 +11,7 @@ use Data::Dumper;
 
 binmode(STDOUT, ":utf8");
 #command line options
-my ( $help, $period, $use_ascii, $use_ansi, $use_unicode, $format, $author, $filepath, $all_branches );
+my ( $help, $period, $use_ascii, $use_ansi, $use_unicode, $format, $author, $filepath, $all_branches, $hg );
 
 GetOptions(
     'help|?'      => \$help,
@@ -20,7 +20,8 @@ GetOptions(
     'ansi'        => \$use_ansi,
     'unicode'     => \$use_unicode,
     'author=s'    => \$author,
-    'all'         => \$all_branches
+    'all'         => \$all_branches,
+    'hg'          => \$hg
 ) or pod2usage(2);
 
 pod2usage(1) if $help;
@@ -67,7 +68,7 @@ sub process {
 }
 
 sub process_current_repo {
-    my $git_command = git_command();
+    my $git_command = $hg ? hg_command() : git_command();
     my @epochs      = qx/$git_command/;
 
     if ($?) {
@@ -84,6 +85,11 @@ sub process_current_repo {
         $status = add_epoch($_);
         last if !$status;
     }
+}
+
+sub hg_command {
+    my $command = qq/hg log --template "{date(date, '%s')}\n"/;
+    return $command;
 }
 
 sub git_command {
@@ -441,6 +447,8 @@ Activity can be displayed using ascii, ansi or unicode characters, default is ch
 
   git-cal --unicode
 
+  git-cal --hg
+
   git-cal <options> <filepath>
 
 =head2 OPTIONS
@@ -482,6 +490,10 @@ Display activity using ANSI colors
 =item --unicode
 
 Display activity using unicode characters
+
+=item --hg
+
+Display activity for a Mercurial repository
 
 =item --help|-?
 
