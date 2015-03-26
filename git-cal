@@ -397,19 +397,19 @@ sub configure {
 	my $git_command = "git config --get-regexp 'calendar\.*'";
 	my @parts       = split(/\s/, qx/$git_command/);
 	if(@parts) {
-	    my %config;
-	    while(my ($key, $value) = splice(@parts, 0, 2)) {
+        my %config;
+        while(my ($key, $value) = splice(@parts, 0, 2)) {
 		$key =~ s/calendar\.//;
 		$config{$key} = $value;
-	    }
-	    local @ARGV = (map  { ( "-$_" => $config{$_} ) } 
-			   grep { exists $config{$_}       } @wanted);
-	    GetOptions(
+        }
+        local @ARGV = (map  { ( "-$_" => $config{$_} ) }
+               grep { exists $config{$_}       } @wanted);
+        GetOptions(
 		'period=n'  => $period,
 		'format=s'  => sub {
-		    if    ($_[1] eq 'ascii')   { $$ascii   ||= 1; }
-		    elsif ($_[1] eq 'ansi')    { $$ansi    ||= 1; }
-		    elsif ($_[1] eq 'unicode') { $$unicode ||= 1; }
+            if    ($_[1] eq 'ascii')   { $$ascii   ||= 1; }
+            elsif ($_[1] eq 'ansi')    { $$ansi    ||= 1; }
+            elsif ($_[1] eq 'unicode') { $$unicode ||= 1; }
 		},
 		'author=s'  => $author
 		);
@@ -426,8 +426,8 @@ git-cal - A simple tool to view commits calendar (similar to github contribution
 =head1 SYNOPSIS
 
 "git-cal" is a tool to visualize the git commit history in github's contribution calendar style.
-The calendar shows how frequently the commits are made over the past year or some choosen period
-Activity can be displayed using ascii, ansi or unicode characters, default is choosen based on ENV
+The calendar shows how frequently the commits are made over the past year or some chosen period.
+Activity can be displayed using ascii, ansi or unicode characters, default is chosen based on ENV.
 
   git-cal
 
