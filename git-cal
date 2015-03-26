@@ -426,8 +426,8 @@ git-cal - A simple tool to view commits calendar (similar to github contribution
 =head1 SYNOPSIS
 
 "git-cal" is a tool to visualize the git commit history in github's contribution calendar style.
-The calendar shows how frequently the commits are made over the past year or some choosen period
-Activity can be displayed using ascii, ansi or unicode characters, default is choosen based on ENV
+The calendar shows how frequently the commits are made over the past year or some chosen period.
+Activity can be displayed using ascii, ansi or unicode characters, default is chosen based on ENV.
 
   git-cal
 
