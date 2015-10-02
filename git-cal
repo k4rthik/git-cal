@@ -11,7 +11,7 @@ use Data::Dumper;
 
 binmode(STDOUT, ":utf8");
 #command line options
-my ( $help, $period, $use_ascii, $use_ansi, $use_unicode, $format, $author, $filepath, $all_branches );
+my ( $help, $period, $use_ascii, $use_ansi, $use_unicode, $format, $author, $filepath, $event_file, $all_branches );
 
 GetOptions(
     'help|?'      => \$help,
@@ -20,6 +20,7 @@ GetOptions(
     'ansi'        => \$use_ansi,
     'unicode'     => \$use_unicode,
     'author=s'    => \$author,
+    'from_file=s' => \$event_file,
     'all'         => \$all_branches
 ) or pod2usage(2);
 
@@ -61,7 +62,11 @@ sub process {
           :                        'ansi';
     }
     init_cal_stuff();
-    process_current_repo();
+    if ($event_file) {
+        process_from_file($event_file);
+    } else {
+        process_current_repo();
+    }
     my %stats = compute_stats();
     print_grid(%stats);
 }
@@ -73,6 +78,28 @@ sub process_current_repo {
     if ($?) {
         print "fatal: git-cal failed to get the git log\n";
         exit(2);
+    }
+
+    if ( !@epochs ) {
+        print "git-cal: got empty log, nothing to do\n";
+        exit(1);
+    }
+    my $status;
+    foreach (@epochs) {
+        $status = add_epoch($_);
+        last if !$status;
+    }
+}
+
+sub process_from_file {
+    my $fh;
+    my @epochs;
+    my $file = shift(@_);
+    if ($file ne '-') {
+        open ($fh, '<', $file) or die "Error: Could not open file '$file'";
+        @epochs = <$fh>;
+    } else {
+        @epochs = <STDIN>;
     }
 
     if ( !@epochs ) {
@@ -439,6 +466,8 @@ Activity can be displayed using ascii, ansi or unicode characters, default is ch
 
   git-cal --ansi
 
+  git-cal --from_file=<timestamp_file>
+
   git-cal --unicode
 
   git-cal <options> <filepath>
@@ -478,6 +507,11 @@ Display activity using ASCII characters instead of ANSI colors.
 =item --ansi
 
 Display activity using ANSI colors
+
+=item --from_file
+
+Display activity from a (non-git) file of newline separated timestamps.
+Alternatively read timestamps from stdin if the filename '-' is given.
 
 =item --unicode
 
